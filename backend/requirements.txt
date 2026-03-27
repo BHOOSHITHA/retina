@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python
+numpy
+celery
+torch
+mlflow
+onnx
+onnxruntime
+pymoo
+onnxscript
