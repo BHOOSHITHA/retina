@@ -138,7 +138,7 @@ if __name__ == "__main__":
         loader = DataLoader(training_dataset, batch_size=max(1, int(best_params[2])), shuffle=True)
         
         best_model.train()
-        epochs = 15
+        epochs = 100
         for epoch in range(epochs):
             epoch_loss = 0
             for inputs, targets in loader:
