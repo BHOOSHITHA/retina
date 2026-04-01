@@ -1,0 +1,4 @@
+source venv/bin/activate
+uvicorn app:app --reload
+
+celery -A celery_worker worker --loglevel=info

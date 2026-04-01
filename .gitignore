@@ -23,6 +23,7 @@ backend/datasets/
 dataset/
 datasets/
 *.onnx
+*.onnx.data
 *.h5
 *.hdf5
 *.pt

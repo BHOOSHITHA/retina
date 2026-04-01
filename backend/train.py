@@ -83,7 +83,7 @@ def evaluate_fitness(hyperparams, dataset_name="SYSTEM_AUTO"):
 def export_to_onnx(model, dummy_input, filename="best_model.onnx"):
     model.eval()
     temp_path = os.path.join(os.path.dirname(__file__), filename)
-    torch.onnx.export(model, dummy_input, temp_path, opset_version=11,
+    torch.onnx.export(model, dummy_input, temp_path, opset_version=18,
                       input_names=['input'], output_names=['output'],
                       dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}})
     print(f"System Model successfully updated into {temp_path}")

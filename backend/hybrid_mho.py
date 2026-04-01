@@ -38,8 +38,12 @@ class HybridMultiObjectiveMHO:
         self.personal_bests = np.copy(self.positions)
         self.global_best = None
 
-    def optimize(self):
-        print(f"Executing Advanced Multi-Objective Hybrid (GA+PSO+NSGA2) over {self.max_iterations} Iterations")
+    def optimize(self, log_callback=None):
+        def log(msg):
+            print(msg)
+            if log_callback: log_callback(msg)
+
+        log(f"Executing Advanced Multi-Objective Hybrid (GA+PSO+NSGA2) over {self.max_iterations} Iterations")
         
         best_overall_position = None
         best_dice_score = float('-inf')
@@ -48,6 +52,7 @@ class HybridMultiObjectiveMHO:
 
         for iteration in range(self.max_iterations):
             F = [] 
+            log(f"[Generation {iteration+1}] Evaluating swarm particles...")
             
             # 1. EVALUATION (Multi-Objective)
             for i in range(self.pop_size):
@@ -105,5 +110,7 @@ class HybridMultiObjectiveMHO:
                 for d in range(self.dim):
                     low, high = self.bounds[d]
                     self.positions[i, d] = np.clip(self.positions[i, d], low, high)
+            
+            log(f"[Generation {iteration+1}] Complete - Best Dice Score: {best_dice_score:.3f}")
 
         return best_overall_position, best_dice_score

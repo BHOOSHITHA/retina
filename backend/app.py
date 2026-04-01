@@ -63,10 +63,14 @@ def get_run_status(run_id: str):
     run_data = optimization_runs[run_id]
     
     if CELERY_ENABLED and "task_id" in run_data:
-        from celery.result import AsyncResult
-        res = AsyncResult(run_data["task_id"])
+        from celery_worker import celery_app
+        res = celery_app.AsyncResult(run_data["task_id"])
         if res.ready():
             run_data.update(res.result if isinstance(res.result, dict) else {"status": "completed", "result": str(res.result)})
+        else:
+            if res.info and isinstance(res.info, dict) and "logs" in res.info:
+                run_data["logs"] = res.info["logs"]
+                run_data["status"] = "running"
     else:
         # Simulation Mode
         elapsed = time.time() - run_data.get("start_time", time.time())
