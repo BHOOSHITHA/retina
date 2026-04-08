@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Zap, Eye, Terminal, Play } from 'lucide-react';
+import { Upload, Zap, Eye, Terminal, Play, Activity, Shield, ChevronRight, Settings, Info } from 'lucide-react';
 import './App.css';
 
 const API_BASE = "http://127.0.0.1:8000";
@@ -8,17 +8,24 @@ function LiveTuningDashboard() {
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('idle');
   const [runId, setRunId] = useState(null);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const startTuning = async () => {
     try {
       setStatus('running');
-      setLogs(['[System] Initializing Swarm Auto-Tuner...']);
+      setLogs(['[System] Initializing Swarm Auto-Tuner...', '[System] Connecting to MHO optimization engine...']);
       const res = await fetch(`${API_BASE}/optimize`, { method: "POST" });
       const data = await res.json();
       setRunId(data.run_id);
       pollStatus(data.run_id);
     } catch (err) {
-      setLogs(l => [...l, "[Error] Failed to connect to backend"]);
+      setLogs(l => [...l, "[Error] Failed to connect to backend engine"]);
       setStatus('idle');
     }
   };
@@ -45,30 +52,59 @@ function LiveTuningDashboard() {
   };
 
   return (
-    <div className="glass-card" style={{ padding: '3rem' }}>
-      <div className="card-title" style={{ justifyContent: 'center', fontSize: '1.5rem', marginBottom: '2rem' }}>
-        <Terminal size={28} className="icon" color="var(--primary-color)" />
-        MHO Swarm Tuning Dashboard
+    <div className="glass-card dashboard-card">
+      <div className="card-header">
+        <div className="card-title-group">
+          <Terminal size={20} className="icon-accent" />
+          <h3>MHO Swarm Tuning Intelligence</h3>
+        </div>
+        <div className={`status-indicator ${status}`}>
+          <span className="dot"></span>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </div>
       </div>
       
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <button 
-          className="primary-btn" 
-          onClick={startTuning} 
-          disabled={status === 'running'}
-          style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
-        >
-           {status === 'running' ? <div className="loader" style={{ width: '20px', height: '20px', borderWidth: '3px' }}></div> : <Play size={20} />}
-           {status === 'running' ? "Swarm is Optimizing..." : "Start Swarm Auto-Tuner"}
-        </button>
-      </div>
+      <div className="dashboard-content">
+        <div className="terminal-container">
+          <div className="terminal-header">
+            <div className="terminal-controls">
+              <span></span><span></span><span></span>
+            </div>
+            <div className="terminal-title">mho-swarm-optimizer --verbose</div>
+          </div>
+          <div className="terminal-body" ref={scrollRef}>
+             {logs.length === 0 && <div className="terminal-placeholder">System idle. Awaiting optimization command...</div>}
+             {logs.map((log, i) => (
+               <div key={i} className="log-line">
+                 <span className="log-timestamp">[{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}]</span>
+                 <span className="log-text">{log}</span>
+               </div>
+             ))}
+             {status === 'running' && <div className="terminal-cursor"></div>}
+          </div>
+        </div>
 
-      <div className="terminal-window" style={{ background: '#0f172a', padding: '1.5rem', borderRadius: '12px', minHeight: '300px', border: '1px solid #334155', fontFamily: 'monospace', color: '#10b981', textAlign: 'left', overflowY: 'auto' }}>
-         {logs.length === 0 && <span style={{ color: '#64748b' }}>Waiting to start system...</span>}
-         {logs.map((log, i) => (
-           <div key={i} className="log-line" style={{ marginBottom: '0.5rem' }}>{log}</div>
-         ))}
-         {status === 'running' && <div className="blinking-cursor" style={{ display: 'inline-block', width: '8px', height: '15px', background: '#10b981', animation: 'blink 1s step-end infinite' }}></div>}
+        <div className="dashboard-actions">
+          <button 
+            className="action-btn-primary" 
+            onClick={startTuning} 
+            disabled={status === 'running'}
+          >
+             {status === 'running' ? <div className="loading-spinner-small"></div> : <Play size={18} />}
+             <span>{status === 'running' ? "Optimizing Neural Weights..." : "Initialize Swarm Tuner"}</span>
+          </button>
+          
+          <div className="info-panel">
+            <div className="info-item">
+              <Activity size={16} />
+              <span>Real-time Swarm Feedback</span>
+            </div>
+            <div className="info-item">
+              <Shield size={16} />
+              <span>Secure Adaptive Architecture</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -117,146 +153,190 @@ function App() {
       setSegMetrics(data.metrics);
       setMhoSpecs(data.mho_specs);
     } catch (err) {
-      alert("Segmentation API failed. Ensure the Python backend is running.");
+      console.error(err);
+      alert("Pipeline failure. Ensure backend services are active.");
     } finally {
       setSegLoading(false);
     }
   };
 
   return (
-    <div className="app-container" style={{ maxWidth: '1000px' }}>
-      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div style={{ textAlign: 'left' }}>
-          <h1>Clinical Retinal Diagnosis System</h1>
-          <p>Instant System-Automated Vessel Segmentation Workflow</p>
+    <div className="app-shell">
+      <nav className="side-nav">
+        <div className="nav-logo">
+          <div className="logo-icon"><Zap size={24} /></div>
+          <span className="logo-text">Retina<span>AI</span></span>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', flexShrink: 0 }}>
+        
+        <div className="nav-items">
           <button 
-             onClick={() => setCurrentView('segmenter')}
-             style={{ background: currentView === 'segmenter' ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            className={`nav-item ${currentView === 'segmenter' ? 'active' : ''}`}
+            onClick={() => setCurrentView('segmenter')}
           >
-             Segmenter
+            <Eye size={20} />
+            <span>Diagnostics</span>
           </button>
           <button 
-             onClick={() => setCurrentView('tuner')}
-             style={{ background: currentView === 'tuner' ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            className={`nav-item ${currentView === 'tuner' ? 'active' : ''}`}
+            onClick={() => setCurrentView('tuner')}
           >
-             Live Tuning Dashboard
+            <Settings size={20} />
+            <span>Swarm Tuner</span>
           </button>
         </div>
-      </header>
-
-      {currentView === 'segmenter' ? (
-      <div className="glass-card" style={{ padding: '3rem' }}>
-        <div className="card-title" style={{ justifyContent: 'center', fontSize: '1.5rem', marginBottom: '2rem' }}>
-          <Eye size={28} className="icon" color="var(--success-color)" />
-          Diagnostic Control Center
+        
+        <div className="nav-footer">
+          <div className="user-profile">
+            <div className="avatar">RD</div>
+            <div className="user-info">
+              <span className="user-name">Dr. Retina</span>
+              <span className="user-role">Lead Clinician</span>
+            </div>
+          </div>
         </div>
+      </nav>
 
-        {!imagePreview && (
-          <div 
-             className="upload-zone"
-             onClick={() => fileInputRef.current?.click()}
-             style={{ padding: '4rem 2rem' }}
-          >
-             <Upload size={48} className="upload-icon" />
-             <div className="upload-text" style={{ fontSize: '1.25rem' }}>Securely Upload Patient Eye Scan</div>
-             <div className="upload-sub" style={{ fontSize: '1rem' }}>Drag & Drop or Click to Browse</div>
-             <input type="file" hidden ref={fileInputRef} onChange={handleImageSelect} accept="image/*" />
+      <main className="main-content">
+        <header className="top-header">
+          <div className="header-breadcrumbs">
+            <span>Dashboard</span>
+            <ChevronRight size={14} />
+            <span className="current">{currentView === 'segmenter' ? 'Vessel Segmentation' : 'Neural Tuning'}</span>
           </div>
-        )}
-
-        {imagePreview && !segSteps && (
-          <div style={{ textAlign: 'center' }}>
-            <div className="result-image-container mb-4" style={{ display: 'inline-block', maxWidth: '400px' }}>
-              <img src={imagePreview} className="result-image" alt="Preview" />
-              <button 
-                className="primary-btn" 
-                style={{ margin: 0, borderRadius: '0 0 12px 12px', padding: '1rem', fontSize: '1.1rem' }} 
-                onClick={handleSegmentation} 
-                disabled={segLoading}
-              >
-                {segLoading ? <div className="loader"></div> : <Zap size={24} />}
-                {segLoading ? "Executing AI Diagnosis Model..." : "Run AI Diagnosis Pipeline"}
-              </button>
-            </div>
-            <div style={{ marginTop: '1rem' }}>
-                <button 
-                  onClick={() => { setImagePreview(null); setSelectedImage(null); }}
-                  style={{ background: 'transparent', color: 'var(--text-secondary)', textDecoration: 'underline' }}
-                >
-                  Upload a different image
-                </button>
+          
+          <div className="header-actions">
+            <button className="icon-btn"><Info size={20} /></button>
+            <div className="system-status">
+              <span className="pulse"></span>
+              System Active
             </div>
           </div>
-        )}
+        </header>
 
-        {segSteps && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', alignItems: 'flex-start' }}>
-              <div className="step-card">
-                 <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '0.9rem', textAlign: 'center' }}>1. Original Upload</h4>
-                 <div className="result-image-container"><img src={imagePreview} className="result-image" /></div>
+        <section className="content-area">
+          {currentView === 'segmenter' ? (
+            <div className="segmenter-view">
+              <div className="view-intro">
+                <h1>Clinical Retinal Analysis</h1>
+                <p>Advanced vessel segmentation using MHO-optimized neural architectures.</p>
               </div>
-              <div className="step-card">
-                 <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '0.9rem', textAlign: 'center' }}>2. Green Channel</h4>
-                 <div className="result-image-container"><img src={segSteps.green} className="result-image" /></div>
-              </div>
-              <div className="step-card">
-                 <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '0.9rem', textAlign: 'center' }}>3. CLAHE Enhancement</h4>
-                 <div className="result-image-container"><img src={segSteps.clahe} className="result-image" /></div>
-              </div>
-              <div className="step-card">
-                 <h4 style={{ color: '#fff', marginBottom: '0.75rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: 'bold' }}>4. Deep AI Output</h4>
-                 <div className="result-image-container" style={{ border: '2px solid var(--success-color)', boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)' }}>
-                    <img src={segSteps.overlay} className="result-image" />
-                 </div>
+
+              <div className="glass-card main-card">
+                {!imagePreview ? (
+                  <div 
+                    className="drop-zone"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <div className="drop-zone-inner">
+                      <div className="upload-illustration">
+                        <Upload size={40} />
+                      </div>
+                      <h3>Import Retinal Scan</h3>
+                      <p>Drag and drop DICOM or high-resolution JPEG/PNG files</p>
+                      <button className="btn-secondary">Browse Files</button>
+                    </div>
+                    <input type="file" hidden ref={fileInputRef} onChange={handleImageSelect} accept="image/*" />
+                  </div>
+                ) : (
+                  <div className="diagnostic-workflow">
+                    {!segSteps ? (
+                      <div className="preview-stage">
+                        <div className="image-preview-wrapper">
+                          <img src={imagePreview} alt="Preview" />
+                          <div className="image-overlay-info">Original Scan</div>
+                        </div>
+                        <div className="preview-controls">
+                          <button 
+                            className="btn-primary-large" 
+                            onClick={handleSegmentation} 
+                            disabled={segLoading}
+                          >
+                            {segLoading ? <div className="loading-spinner"></div> : <Activity size={20} />}
+                            <span>{segLoading ? "Processing Neural Layers..." : "Execute AI Diagnosis"}</span>
+                          </button>
+                          <button 
+                            className="btn-ghost"
+                            onClick={() => { setImagePreview(null); setSelectedImage(null); }}
+                            disabled={segLoading}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="result-stage">
+                        <div className="result-grid">
+                          <div className="result-item">
+                            <div className="result-label">Original</div>
+                            <div className="result-img-box"><img src={imagePreview} alt="Original" /></div>
+                          </div>
+                          <div className="result-item">
+                            <div className="result-label">Channel Ops</div>
+                            <div className="result-img-box"><img src={segSteps.green} alt="Green" /></div>
+                          </div>
+                          <div className="result-item">
+                            <div className="result-label">Enhanced</div>
+                            <div className="result-img-box"><img src={segSteps.clahe} alt="CLAHE" /></div>
+                          </div>
+                          <div className="result-item highlight">
+                            <div className="result-label">AI Segmentation</div>
+                            <div className="result-img-box primary"><img src={segSteps.overlay} alt="Overlay" /></div>
+                          </div>
+                        </div>
+
+                        <div className="analysis-summary">
+                          <div className="metrics-container">
+                            <div className="metric-card">
+                              <span className="m-label">Confidence Score</span>
+                              <span className="m-value">{(segMetrics.estimated_dice * 100).toFixed(1)}%</span>
+                              <div className="m-bar"><div style={{ width: `${segMetrics.estimated_dice * 100}%` }}></div></div>
+                            </div>
+                            <div className="metric-card">
+                              <span className="m-label">Inference Latency</span>
+                              <span className="m-value">{segMetrics.inference_time_ms.toFixed(0)}<small>ms</small></span>
+                              <div className="m-bar"><div className="latency" style={{ width: '40%' }}></div></div>
+                            </div>
+                          </div>
+
+                          <div className="mho-specs-panel">
+                            <div className="specs-header">
+                              <Zap size={16} />
+                              <span>MHO Optimization Profile</span>
+                            </div>
+                            <div className="specs-grid">
+                              <div className="spec-item"><label>Engine</label><span>{mhoSpecs.algorithm}</span></div>
+                              <div className="spec-item"><label>Model</label><span>{mhoSpecs.architecture}</span></div>
+                              <div className="spec-item"><label>Batch</label><span>{mhoSpecs.batch_size}</span></div>
+                              <div className="spec-item"><label>LR Rate</label><span>{mhoSpecs.learning_rate}</span></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="result-footer">
+                          <button 
+                            className="btn-primary"
+                            onClick={() => { setImagePreview(null); setSelectedImage(null); setSegSteps(null); }}
+                          >
+                            New Patient Analysis
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-
-            {segMetrics && (
-              <div className="metrics-box" style={{ maxWidth: '400px', margin: '2rem auto 0' }}>
-                <div className="metric-row">
-                  <span className="metric-label">System Confidence (Dice)</span>
-                  <span className="metric-value">{(segMetrics.estimated_dice * 100).toFixed(1)}%</span>
-                </div>
-                <div className="metric-row">
-                  <span className="metric-label">Pipeline Execution Time</span>
-                  <span className="metric-value">{segMetrics.inference_time_ms.toFixed(1)} ms</span>
-                </div>
+          ) : (
+            <div className="tuner-view">
+              <div className="view-intro">
+                <h1>Neural Swarm Optimization</h1>
+                <p>Fine-tune model hyperparameters using Multi-Objective Swarm Intelligence.</p>
               </div>
-            )}
-            
-            {mhoSpecs && (
-              <div className="mho-badge" style={{ maxWidth: '450px', margin: '1.5rem auto 0', padding: '1.25rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success-color)', borderRadius: '12px' }}>
-                <h4 style={{ color: 'var(--success-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1.1rem', marginTop: 0 }}>
-                  <Zap size={20} /> MHO Optimized Pipeline Used
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  <div><strong>Algorithm:</strong> <span style={{color: '#fff'}}>{mhoSpecs.algorithm}</span></div>
-                  <div><strong>Architecture:</strong> <span style={{color: '#fff'}}>{mhoSpecs.architecture}</span></div>
-                  <div><strong>Batch Size:</strong> <span style={{color: '#fff'}}>{mhoSpecs.batch_size}</span></div>
-                  <div><strong>Learning Rate:</strong> <span style={{color: '#fff'}}>{mhoSpecs.learning_rate}</span></div>
-                </div>
-              </div>
-            )}
-            
-            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                <button 
-                  className="primary-btn" 
-                  style={{ display: 'inline-flex', width: 'auto', padding: '0.75rem 2rem' }}
-                  onClick={() => { setImagePreview(null); setSelectedImage(null); setSegSteps(null); }}
-                >
-                  Analyze New Patient Scan
-                </button>
+              <LiveTuningDashboard />
             </div>
-          </>
-        )}
-
-      </div>
-      ) : (
-        <LiveTuningDashboard />
-      )}
+          )}
+        </section>
+      </main>
     </div>
   );
 }
